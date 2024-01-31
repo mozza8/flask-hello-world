@@ -3,3 +3,4 @@ Gunicorn
 Flask-cors
 flask-sqlalchemy
 psycopg2
+requests
