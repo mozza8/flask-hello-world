@@ -92,6 +92,7 @@ if __name__ == "__main__":
     app.config["SQLALCHEMY_ECHO"] = True
     app.config["SQLALCHEMY_RECORD_QUERIES"] = True
     db.init_app(app)
+
     with app.app_context():
         db.drop_all()
         db.create_all()
