@@ -8,7 +8,7 @@ CORS(app)
 
 db = SQLAlchemy()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://zan:80U1urckSY4QyIlUQLH0TFO9T1NkqPlJ@dpg-cmskv42cn0vc73bjdvpg-a/crypto_watchlist_zcdp'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://zan:80U1urckSY4QyIlUQLH0TFO9T1NkqPlJ@dpg-cmskv42cn0vc73bjdvpg-a/crypto_watchlist_zcdp'
 app.config["SQLALCHEMY_ECHO"] = True
 app.config["SQLALCHEMY_RECORD_QUERIES"] = True
 
