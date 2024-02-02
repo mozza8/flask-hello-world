@@ -8,6 +8,19 @@ CORS(app)
 
 db = SQLAlchemy()
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://zan:80U1urckSY4QyIlUQLH0TFO9T1NkqPlJ@dpg-cmskv42cn0vc73bjdvpg-a/crypto_watchlist_zcdp'
+app.config["SQLALCHEMY_ECHO"] = True
+app.config["SQLALCHEMY_RECORD_QUERIES"] = True
+
+db.init_app(app)
+
+print('---------------------------------------------------  DB INIT OKAY --------------------------------------------')
+
+with app.app_context():
+    db.drop_all()
+    db.create_all()
+    print('---------------------------------------------------  DB CREATE OKAY --------------------------------------------')
+
 class Watchlist(db.Model):
     address = db.Column('address', db.String(60), primary_key=True)
     token = db.Column(db.String(20))
@@ -87,18 +100,3 @@ def get_top_holders():
         })
     return response.json()
 
-if __name__ == "__main__":
-
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://zan:80U1urckSY4QyIlUQLH0TFO9T1NkqPlJ@dpg-cmskv42cn0vc73bjdvpg-a/crypto_watchlist_zcdp'
-    app.config["SQLALCHEMY_ECHO"] = True
-    app.config["SQLALCHEMY_RECORD_QUERIES"] = True
-
-    db.init_app(app)
-
-
-    with app.app_context():
-        db.drop_all()
-        db.create_all()
-
-
-    app.run()
