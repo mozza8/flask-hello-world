@@ -1,118 +1,84 @@
-from flask import request, render_template
+from flask import Flask, request, render_template_string
 from flask_cors import CORS
-from flask import Flask
 import requests
 from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 CORS(app)
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import threading
+import time
 
-db = SQLAlchemy()
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://zan:80U1urckSY4QyIlUQLH0TFO9T1NkqPlJ@dpg-cmskv42cn0vc73bjdvpg-a/crypto_watchlist_zcdp'
-app.config["SQLALCHEMY_ECHO"] = True
-app.config["SQLALCHEMY_RECORD_QUERIES"] = True
-
-db.init_app(app)
-
-print('---------------------------------------------------  DB INIT OKAY --------------------------------------------')
-
-with app.app_context():
-    db.drop_all()
-    db.create_all()
-    print('---------------------------------------------------  DB CREATE OKAY --------------------------------------------')
-
-class Watchlist(db.Model):
-    address = db.Column('address', db.String(60), primary_key=True)
-    token = db.Column(db.String(20))
-    blockchain = db.Column(db.String(30))
-    amount_transacted = db.Column(db.String(50))
-    time = db.Column(db.String(50))
-    decimals = db.Column(db.Integer())
-
-    def serialize(self):
-        return {
-            "address": self.address,
-            "token": self.token,
-            "blockchain": self.blockchain,
-            "amount_transacted": self.amount_transacted,
-            "time": self.time,
-            "decimals": self.decimals
-
-        }
-
-def jsonify_watchlist(watchlist):
-    result = []
-    for wallet in watchlist:
-        result.append({
-            "address": wallet.address,
-            "token": wallet.token,
-            "blockchain": wallet.blockchain,
-            "amount_transacted": wallet.amount_transacted,
-            "time": wallet.time,
-            "decimals": wallet.decimals
-        })
-    return result
-
-@app.route('/')
+@app.route("/")
 def hello_world():
-    return render_template('index.html')
+    return render_template_string(open("login.html").read())
 
-@app.route("/add-wallet-address")
-def add_wallet_address():
-    watchlist = Watchlist()
-    watchlist.address = request.args["address"]
-    watchlist.token = request.args["token"]
-    watchlist.blockchain = request.args["blockchain"]
-    watchlist.amount_transacted = request.args["value"]
-    watchlist.time = request.args["time"]
-    watchlist.decimals = request.args["decimals"]
+@app.route('/submit', methods=['POST'])
+def submit_form():
+    # Get form data and store in variables
+    username = request.form['username']
+    password: str = request.form['password']
+    #schedule_function(username, password, interval=7200, repetitions=5)
+    sendPickup(username, password)
 
-    db.session.add(watchlist)
-    db.session.commit()
-    return jsonify_watchlist(Watchlist.query.all())
+def get_drvier():
+  # Set options to make browsing easier
+  options = webdriver.ChromeOptions()
+  options.add_argument("disable-infobars")
+  options.add_argument("start-maximized")
+  options.add_argument("disable-dev-shm-usage")
+  options.add_argument("no-sandbox")
+  options.add_experimental_option("excludeSwitches", ["enable-automation"])
+  options.add_argument("disable-blink-features=AutomationControlled")
 
-@app.route("/remove-wallet-address")
-def remove_wallet_address():
-    address = request.args["address"]
-    Watchlist.query.filter_by(address=address).delete()
-    db.session.commit()
+  driver = webdriver.Chrome(options=options)
+  driver.get("https://www.buzzerbeater.com/default.aspx?lang=sl-SI")
+  return driver
 
-    return address
+def sendPickup(username, password):
+  driver = get_drvier()
+  driver.find_element(by="xpath", value="/html/body/form/div[3]/header/div/div/div[2]/div/div[1]/a").click()
+  time.sleep(2)
+  driver.find_element(by="id", value="txtLoginUserName").send_keys(username)
+  time.sleep(2)
+  driver.find_element(by="id", value="txtLoginPassword").send_keys(password + Keys.RETURN)
+  time.sleep(5)
+  driver.find_element(by="id", value="menuSearch").click()
+  time.sleep(2)
+  driver.find_element(by="id", value="cphContent_tbTeamname").send_keys('visokoleteči asi' + Keys.RETURN)
+  time.sleep(3)
+  driver.find_element(by="id", value="cphContent_teamResults_rptResults_linkResults_0").click()
+  time.sleep(3)
+  driver.find_element(by="id", value="cphContent_btnPickup").click()
+  time.sleep(3)
+  driver.find_element(by="id", value="btnLogout").click()
 
+def acceptPickup(username, password):
+  driver = get_drvier()
+  driver.find_element(by="xpath", value="/html/body/form/div[3]/header/div/div/div[2]/div/div[1]/a").click()
+  time.sleep(2)
+  driver.find_element(by="id", value="txtLoginUserName").send_keys('moza8')
+  time.sleep(2)
+  driver.find_element(by="id", value="txtLoginPassword").send_keys('deeppurple8' + Keys.RETURN)
+  time.sleep(5)
+  driver.find_element(by="id", value="menuScrimmages").click()
+  time.sleep(2)
+  driver.find_element(by="id", value="cphContent_tbTeamname").send_keys('visokoleteči asi' + Keys.RETURN)
+  time.sleep(3)
+  driver.find_element(by="id", value="cphContent_teamResults_rptResults_linkResults_0").click()
+  time.sleep(3)
+  driver.find_element(by="id", value="cphContent_btnPickup").click()
+  time.sleep(3)
+  driver.find_element(by="id", value="btnLogout").click()
 
-@app.route("/get-wallets")
-def get_wallets():
-    watchlist_first = Watchlist.query.all()
+def schedule_function(username, password,interval, repetitions):
+  count = 0
 
-    # return wallets
-    return jsonify_watchlist(watchlist_first)
+  def task():
+    nonlocal count
+    if count < repetitions:
+      sendPickup(username, password)
+      count += 1
+      threading.Timer(interval, task).start()
 
-@app.route("/top-holders")
-def get_top_holders():
-    chain_id = request.args["chain_id"]
-    contract_address = request.args["contract_address"]
-    page = request.args["page"]
-    limit = request.args["limit"]
-    url = f'https://api.chainbase.online/v1/token/top-holders?chain_id={chain_id}&contract_address={contract_address}&page={page}&limit={limit}'
-    response = requests.get(url, headers={
-          "x-api-key": '2ajP2MBTYZlQA7f6RSXWc6Pk1gU',
-          "accept": "application/json",
-        })
-    return response.json()
-
-# if __name__ == "__main__":
-#
-#   ADD EXTERNAL URL FOR THE DATABASE!!!!!
-#     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://zan:80U1urckSY4QyIlUQLH0TFO9T1NkqPlJ@dpg-cmskv42cn0vc73bjdvpg-a/crypto_watchlist_zcdp'
-#     app.config["SQLALCHEMY_ECHO"] = True
-#     app.config["SQLALCHEMY_RECORD_QUERIES"] = True
-#
-#     db.init_app(app)
-#
-#
-#     with app.app_context():
-#         db.drop_all()
-#         db.create_all()
-#
-#
-#     app.run()
+  task()
